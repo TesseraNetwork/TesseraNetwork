@@ -13,6 +13,13 @@ The Tessera Protocol Validator Node is a core component for interacting with and
 -   **Genesis Initialization:** Provides tools to initialize the network with a predefined tokenomics model, including treasury, community pools, and vesting schedules.
 -   **Secure Network Exposure:** Designed for integration with Cloudflare Tunnels to provide secure and performant external access to the node.
 
+## Documentation
+
+*   **[White Paper](docs/WHITEPAPER.md):** A detailed technical overview of the Tessera Protocol, its architecture, tokenomics, and security model.
+*   **[Deployment Guide](docs/deployment_guide.md):** Comprehensive instructions for setting up, configuring, and running the Tessera Validator Node in various environments.
+*   **[Developer Guide](docs/developer_guide.md):** A guide for developers to understand the codebase, extend functionality, and contribute to the project.
+
+
 ## How it Works: Architecture Overview
 
 The Tessera Validator Node operates with a modular architecture, leveraging several interconnected components:
