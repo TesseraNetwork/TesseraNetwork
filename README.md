@@ -1,182 +1,473 @@
-# Tessera Protocol Validator Node
+# Tessera Protocol
 
-## Project Overview
+<div align="center">
 
-The Tessera Protocol Validator Node is a core component for interacting with and validating the state of the Tessera network. It's a robust, secure, and performance-oriented system designed to manage accounts, process transactions, and handle staking operations within a blockchain-like environment.
+**A next-generation blockchain protocol with hybrid storage, advanced tokenomics, and built-in security**
 
-## Features
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
+[![Protocol Status](https://img.shields.io/badge/status-active%20development-orange)](https://github.com/TesseraNetwork/TesseraNetwork)
 
--   **Account Management:** Secure creation, retrieval, and updates of user accounts, including balances and transaction nonces.
--   **Secure Transactions:** Implements a "secure mode" requiring cryptographic signatures and nonce validation to ensure transaction authenticity and prevent replay attacks.
--   **Hybrid Data Storage:** Utilizes a "hot state" caching layer (Upstash) for speed and a "cold ledger" (Base44) for persistent, authoritative data storage.
--   **Staking Functionality:** Supports staking operations, including fund locking, reward calculation, and claiming mechanisms.
--   **Genesis Initialization:** Provides tools to initialize the network with a predefined tokenomics model, including treasury, community pools, and vesting schedules.
--   **Secure Network Exposure:** Designed for integration with Cloudflare Tunnels to provide secure and performant external access to the node.
+[Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Architecture](#-architecture) • [Tokenomics](#-tokenomics)
 
-## Documentation
+</div>
 
-*   **[White Paper](docs/WHITEPAPER.md):** A detailed technical overview of the Tessera Protocol, its architecture, tokenomics, and security model.
-*   **[Deployment Guide](docs/deployment_guide.md):** Comprehensive instructions for setting up, configuring, and running the Tessera Validator Node in various environments.
-*   **[Developer Guide](docs/developer_guide.md):** A guide for developers to understand the codebase, extend functionality, and contribute to the project.
+---
 
+## 📋 Overview
 
-## How it Works: Architecture Overview
+Tessera Protocol is a complete blockchain infrastructure designed from the ground up for security, performance, and sustainable tokenomics. Unlike traditional blockchains, Tessera utilizes a hybrid storage architecture that combines high-speed caching with persistent ledger technology, enabling unprecedented transaction throughput while maintaining data integrity.
 
-The Tessera Validator Node operates with a modular architecture, leveraging several interconnected components:
+The protocol includes everything needed to run a decentralized network: validator nodes, account management, transaction processing, staking mechanisms, and a comprehensive tokenomics model with treasury management, community pools, and vesting schedules.
 
-1.  **Gateway (`bin/gateway.js`):** The central API server that exposes endpoints for account management, transaction processing, and staking. It orchestrates data flow between the hot state and cold ledger.
-2.  **Tessera Proxy (`tessera-proxy/index.js`):** An intermediary layer that can perform tasks like scrubbing sensitive information or re-routing requests before they reach the gateway.
-3.  **Cold Ledger (Base44):** The primary, persistent data store for all blockchain entities (accounts, transactions, blocks).
-4.  **Hot State (Upstash):** A high-speed cache used by the Gateway to store frequently accessed account data, optimizing read/write performance.
-5.  **Cloudflare Tunnel:** (Optional, but integrated) Provides a secure, public endpoint for the node, abstracting away direct server exposure.
-6.  **Utility Scripts (`bin/`):** A collection of scripts for key generation, transaction signing, fund transfers, staking actions, and resetting the network state.
+### Key Highlights
+
+- 🔐 **Cryptographically Secure**: Ed25519 signatures, nonce validation, and replay attack prevention
+- ⚡ **High Performance**: Hybrid hot/cold storage architecture for optimal speed and reliability
+- 🎯 **Production Ready**: Integrated Cloudflare Tunnel support, proxy layer, and enterprise-grade infrastructure
+- 🏦 **Sustainable Tokenomics**: Built-in treasury, community governance pools, and team vesting schedules
+- 🎁 **Staking Rewards**: Flexible staking system with configurable APY and lock periods
+- 🛠 **Developer Friendly**: Complete CLI tooling, comprehensive APIs, and extensive documentation
+
+---
+
+## ✨ Features
+
+### Protocol Layer
+
+- **Distributed Consensus**
+  - Validator node infrastructure
+  - State synchronization across nodes
+  - Block production and validation
+
+- **Account System**
+  - Cryptographic key pair generation (Ed25519)
+  - Hierarchical account structure
+  - Balance tracking and account history
+
+- **Transaction Engine**
+  - Signature-based authentication
+  - Nonce-based ordering and replay prevention
+  - Atomic transaction execution
+  - Transaction pool management
+
+### Economic Layer
+
+- **Native Token**
+  - Fixed total supply with controlled distribution
+  - Treasury-managed circulation
+  - Burn mechanisms for deflationary pressure
+
+- **Staking Mechanism**
+  - Flexible staking with multiple lock periods
+  - Dynamic APY calculation
+  - Automatic reward distribution
+  - Slashing protection
+
+- **Governance & Vesting**
+  - Community governance pool
+  - Team vesting schedules with cliffs
+  - Treasury management system
+  - On-chain voting capabilities (planned)
+
+### Infrastructure Layer
+
+- **Hybrid Storage Architecture**
+  - Hot State: Upstash Redis for microsecond latency
+  - Cold Ledger: Base44 for immutable, persistent storage
+  - Automatic sync and reconciliation
+  
+- **Network Security**
+  - Cloudflare Tunnel integration
+  - Request sanitization proxy
+  - DDoS protection
+  - Rate limiting and abuse prevention
+
+- **API Gateway**
+  - RESTful JSON API
+  - WebSocket support (planned)
+  - GraphQL endpoints (planned)
+  - Comprehensive error handling
+
+---
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+| Document | Description |
+|----------|-------------|
+| [White Paper](docs/WHITEPAPER.md) | Protocol design, consensus mechanism, cryptographic foundations, and economic model |
+| [Deployment Guide](docs/deployment_guide.md) | Production deployment, validator setup, and infrastructure configuration |
+| [Developer Guide](docs/developer_guide.md) | API reference, SDK usage, smart contract development, and contribution guidelines |
+| [Tokenomics Paper](docs/TOKENOMICS.md) | Detailed breakdown of token distribution, vesting, and economic incentives |
+
+---
+
+## 🏗 Architecture
+
+Tessera Protocol employs a multi-layered architecture designed for scalability and security:
 
 ```mermaid
 graph TD
-    User --&gt; |Requests| Cloudflare_Tunnel;
-    Cloudflare_Tunnel --&gt; |Routes| Tessera_Proxy;
-    Tessera_Proxy --&gt; |Forwards/Modifies| Gateway;
-    Gateway --&gt; |Read/Write Hot State| Upstash_Cache;
-    Gateway --&gt; |Read/Write Cold Ledger| Base44_DB;
-    Scripts --&gt; |Directly interact with| Gateway;
-    Scripts --&gt; |Generate Keys| Keygen;
-
-    subgraph External Services
-        Upstash_Cache[Upstash (Hot State Cache)]
-        Base44_DB[Base44 (Cold Ledger DB)]
-    end
-
-    subgraph Tessera Node Components
-        Gateway[bin/gateway.js (API Server)]
-        Tessera_Proxy[tessera-proxy/index.js]
-        Scripts[Utility Scripts (bin/)]
-    end
+    User[👤 Users & dApps] -->|HTTPS/WSS| CF[🌐 Cloudflare Tunnel]
+    CF -->|Secure Routing| Proxy[🔄 Tessera Proxy Layer]
+    Proxy -->|Request Validation| Gateway[🚪 API Gateway]
+    
+    Gateway -->|Fast Reads/Writes| Hot[⚡ Hot State<br/>Upstash Redis]
+    Gateway -->|Authoritative Storage| Cold[❄️ Cold Ledger<br/>Base44]
+    
+    Gateway -->|Process| TxPool[📋 Transaction Pool]
+    TxPool -->|Validate| Consensus[⚖️ Consensus Engine]
+    Consensus -->|Finalize| Blocks[🔗 Block Production]
+    
+    Blocks -->|Update| Hot
+    Blocks -->|Persist| Cold
+    
+    CLI[🛠 CLI Tools] -.->|Direct Access| Gateway
+    Validators[🔍 Validator Nodes] -->|Sync| Gateway
+    
+    style Hot fill:#ff6b6b
+    style Cold fill:#4ecdc4
+    style Gateway fill:#95e1d3
+    style Consensus fill:#f38181
 ```
 
-## Getting Started
+### Component Breakdown
+
+| Component | Purpose | Technology |
+|-----------|---------|------------|
+| **API Gateway** | Central request router and orchestrator | Node.js, Express |
+| **Tessera Proxy** | Security layer for request sanitization | Node.js |
+| **Hot State Cache** | High-speed account and state storage | Upstash Redis |
+| **Cold Ledger** | Immutable transaction and block storage | Base44 |
+| **Transaction Pool** | Pending transaction queue and validation | In-memory |
+| **Consensus Engine** | Block production and finalization | Custom implementation |
+| **CLI Tools** | Developer utilities and operations scripts | Node.js |
+
+---
+
+## 💰 Tokenomics
+
+Tessera Protocol implements a carefully designed token economy:
+
+### Token Distribution
+
+```
+Total Supply: 1,000,000,000 TESS
+
+├─ Treasury (40%)           400,000,000 TESS
+├─ Community Pool (25%)     250,000,000 TESS
+├─ Team Vesting (20%)       200,000,000 TESS
+├─ Staking Rewards (10%)    100,000,000 TESS
+└─ Initial Validators (5%)   50,000,000 TESS
+```
+
+### Vesting Schedule
+
+- **Team Tokens**: 24-month linear vest with 6-month cliff
+- **Community Pool**: Governance-controlled distribution
+- **Staking Rewards**: Dynamic APY based on total staked amount
+
+### Economic Mechanisms
+
+- **Staking APY**: 5-20% variable based on network participation
+- **Transaction Fees**: Paid in TESS, partially burned for deflation
+- **Validator Rewards**: Block production incentives
+- **Governance Rights**: Stake-weighted voting power (coming soon)
+
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-*   Node.js (v18 or higher recommended)
-*   npm
-*   `cloudflared` executable (for secure tunneling)
-*   Access to Base44 API (with `api_key`)
-*   Access to Upstash Redis (with `UPSTASH_URL` and `UPSTASH_TOKEN`)
+Before you begin, ensure you have:
+
+- **Node.js** v18 or higher ([Download](https://nodejs.org))
+- **npm** (comes with Node.js)
+- **cloudflared** executable ([Download](https://github.com/cloudflare/cloudflared))
+- **Base44 API Access** with API key ([Sign up](https://base44.com))
+- **Upstash Redis** account with URL and token ([Sign up](https://upstash.com))
 
 ### Installation
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-org/tessera.git
-    cd tessera
-    ```
-2.  **Install Node.js dependencies:**
-    ```bash
-    npm install
-    cd tessera-proxy
-    npm install
-    cd ..
-    ```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/TesseraNetwork/TesseraNetwork.git
+   cd tessera
+   ```
 
-### Configuration
+2. **Install dependencies**
+   ```bash
+   npm install
+   cd tessera-proxy
+   npm install
+   cd ..
+   ```
 
-*   **Tessera Proxy:** Create a `.env` file in the `tessera-proxy/` directory with your Cloudflare tunnel URL:
-    ```
-    CLOUDFLARE_TUNNEL_URL=https://your-cloudflare-tunnel-url.trycloudflare.com
-    ```
-*   **Gateway:** Ensure your environment variables for `BASE44_URL`, `BASE44_KEY`, `UPSTASH_URL`, and `UPSTASH_TOKEN` are set. These are critical for the gateway to connect to the cold ledger and hot state. You might set these in a `.env` file in the root if you're not using a global environment.
-    *   `BASE44_URL`: e.g., `https://app.base44.com/api/apps/YOUR_APP_ID/entities`
-    *   `BASE44_KEY`: Your Base44 API Key
-    *   `UPSTASH_URL`: Your Upstash Redis URL
-    *   `UPSTASH_TOKEN`: Your Upstash Redis Token
+3. **Configure environment variables**
+   
+   Create `.env` in the project root:
+   ```env
+   # Base44 Configuration
+   BASE44_URL=https://app.base44.com/api/apps/YOUR_APP_ID/entities
+   BASE44_KEY=your_base44_api_key_here
+   
+   # Upstash Configuration
+   UPSTASH_URL=your_upstash_redis_url_here
+   UPSTASH_TOKEN=your_upstash_token_here
+   ```
+   
+   Create `tessera-proxy/.env`:
+   ```env
+   CLOUDFLARE_TUNNEL_URL=https://your-tunnel-url.trycloudflare.com
+   ```
 
-### Running the Node
+### Running the Protocol
 
-You'll typically run these components in separate terminal windows:
+Launch the complete stack in separate terminal windows:
 
-1.  **Start the Gateway:**
-    ```bash
-    node bin/gateway.js
-    ```
-2.  **Start the Tessera Proxy:**
-    ```bash
-    cd tessera-proxy
-    node index.js
-    cd ..
-    ```
-3.  **Start the Cloudflare Tunnel (if applicable):**
-    Ensure `cloudflared-linux-amd64` (or your OS-specific binary) is in your path or current directory. Replace `http://localhost:8080` with the actual address your `tessera-proxy` is listening on (default is usually 8080 or 3000, check `tessera-proxy/index.js`).
-    ```bash
-    ./cloudflared-linux-amd64 tunnel --url http://localhost:8080
-    ```
+1. **Start the API Gateway** (Terminal 1)
+   ```bash
+   node bin/gateway.js
+   ```
+   ✅ Gateway running on `http://localhost:3000`
 
-## Usage Examples
+2. **Start the Tessera Proxy** (Terminal 2)
+   ```bash
+   cd tessera-proxy
+   node index.js
+   ```
+   ✅ Proxy running on `http://localhost:8080`
 
-### Initializing the Network (First Run)
+3. **Start Cloudflare Tunnel** (Terminal 3)
+   ```bash
+   ./tools/cloudflared-linux-amd64 tunnel --url http://localhost:8080
+   ```
+   ✅ Public URL: `https://[random].trycloudflare.com`
 
-To set up a fresh Tessera network, first reset and then initialize genesis:
+### Initialize the Network
+
+For a fresh deployment:
 
 ```bash
-# Reset all data (WARNING: DELETES ALL DATA)
+# Clear all existing data (⚠️ WARNING: Irreversible!)
 bash bin/reset.sh
 
-# Initialize the tokenomics and core accounts
+# Initialize genesis block with tokenomics
 node bin/genesis-init.js
 ```
 
-### Generating Accounts
+✅ Network initialized with treasury, pools, and vesting schedules!
 
+---
+
+## 🛠 Usage Examples
+
+### Managing Accounts
+
+**Generate a new account:**
 ```bash
 node bin/keygen.js
-# This will output a public address and private key. Save them securely!
-# Example output:
-# PUBLIC ADDRESS: 0x...
-# PRIVATE KEY: ...
+```
+Output:
+```
+✅ Account Created Successfully!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PUBLIC ADDRESS:  0x1a2b3c4d5e6f7g8h9i0j
+PRIVATE KEY:     a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0
+
+⚠️  IMPORTANT: Store your private key securely!
+   Never share it with anyone.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-### Transferring Funds
-
-Use `transfer.sh` to move funds, typically from the Treasury to a new account:
-
+**Check account balance:**
 ```bash
-bash bin/transfer.sh <recipient_address> <amount>
-# Example: bash bin/transfer.sh 0xAbcDef123... 1000
+curl http://localhost:3000/account/0x1a2b3c4d5e6f7g8h9i0j
 ```
 
-### Signing and Sending Transactions
+### Processing Transactions
 
-Use `sign-transfer.js` to create and broadcast a signed transaction:
-
+**Transfer from treasury (admin operation):**
 ```bash
-node bin/sign-transfer.js <from_address> <to_address> <amount> <private_key_of_from_address>
-# Example: node bin/sign-transfer.js 0xAbcDef123... 0xGhijkLmno456... 100 1234abcd...
+bash bin/transfer.sh 0x1a2b3c4d5e6f7g8h9i0j 10000
 ```
 
-### Staking
-
+**Signed transfer between accounts:**
 ```bash
-# Stake funds
-node bin/staking.js stake <staker_address> <amount>
-
-# Check staking stats
-node bin/staking.js stats <staker_address>
-
-# Claim rewards
-node bin/staking.js claim <staker_address>
+node bin/sign-transfer.js \
+  0xSENDER_ADDRESS \
+  0xRECIPIENT_ADDRESS \
+  1000 \
+  YOUR_PRIVATE_KEY
 ```
 
-## Testing
+### Staking Operations
 
-Run the comprehensive test suite to verify all core functionalities:
+**Stake tokens:**
+```bash
+node bin/staking.js stake 0xYOUR_ADDRESS 5000
+```
+
+**Check staking status:**
+```bash
+node bin/staking.js stats 0xYOUR_ADDRESS
+```
+Output:
+```json
+{
+  "staked_amount": "5000",
+  "reward_rate": "0.15",
+  "pending_rewards": "125.50",
+  "lock_until": "2026-03-07T00:00:00Z"
+}
+```
+
+**Claim rewards:**
+```bash
+node bin/staking.js claim 0xYOUR_ADDRESS
+```
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/account/:address` | GET | Retrieve account details and balance |
+| `/account/create` | POST | Create a new account |
+| `/transaction/submit` | POST | Submit a signed transaction |
+| `/transaction/:hash` | GET | Get transaction details |
+| `/staking/stake` | POST | Stake tokens |
+| `/staking/claim` | POST | Claim staking rewards |
+| `/staking/stats/:address` | GET | Get staking statistics |
+| `/health` | GET | Check node health status |
+
+---
+
+## 🧪 Testing
+
+Run the comprehensive test suite to verify all protocol components:
 
 ```bash
+# Run all tests
 bash test_all.sh
+
+# Test specific components
+npm test -- --grep "Account Management"
+npm test -- --grep "Transaction Processing"
+npm test -- --grep "Staking System"
 ```
 
-## Contributing
+---
 
-We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+## 🛡 Security
 
-## License
+Tessera Protocol implements multiple layers of security:
 
-This project is licensed under the [MIT License](LICENSE).
+- **Cryptographic Signatures**: All transactions use Ed25519 signatures
+- **Nonce Validation**: Prevents replay attacks
+- **Secure Mode**: Enforced signature verification on all state changes
+- **Rate Limiting**: Protection against spam and DDoS
+- **Input Sanitization**: All inputs validated and sanitized
+- **Cloudflare Protection**: DDoS mitigation and SSL/TLS encryption
+
+### Reporting Vulnerabilities
+
+If you discover a security vulnerability, please email security@tessera-protocol.io. Do not open public issues for security concerns.
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions from the community! Here's how you can help:
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Commit your changes**: `git commit -m 'Add amazing feature'`
+4. **Push to the branch**: `git push origin feature/amazing-feature`
+5. **Open a Pull Request**
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+### Development Setup
+
+```bash
+# Install dev dependencies
+npm install --include=dev
+
+# Run linter
+npm run lint
+
+# Format code
+npm run format
+
+# Run tests in watch mode
+npm run test:watch
+```
+
+---
+
+## 📊 Roadmap
+
+### Phase 1: Foundation (Q1 2026) ✅
+- [x] Core protocol implementation
+- [x] Hybrid storage architecture
+- [x] Basic staking mechanism
+- [x] CLI tooling
+
+### Phase 2: Enhancement (Q2 2026) 🔄
+- [ ] WebSocket API support
+- [ ] Advanced staking features
+- [ ] On-chain governance voting
+- [ ] Multi-signature wallets
+
+### Phase 3: Ecosystem (Q3 2026) 📋
+- [ ] Smart contract platform
+- [ ] Developer SDK (JavaScript, Python, Rust)
+- [ ] Block explorer
+- [ ] Web wallet
+
+### Phase 4: Scaling (Q4 2026) 📋
+- [ ] Multi-node consensus
+- [ ] Cross-chain bridges
+- [ ] Layer 2 scaling solutions
+- [ ] Mobile applications
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🌐 Community & Support
+
+- **Website**: [tessera-protocol.io](https://tessera-protocol.io)
+- **Documentation**: [docs.tessera-protocol.io](https://docs.tessera-protocol.io)
+- **Protocol Dashboard**: [https://tessera-block-scan.base44.app](https://tessera-block-scan.base44.app)
+- **Discord**: [Join our community](https://discord.gg/tessera)
+- **Twitter**: [@TesseraProtocol](https://twitter.com/TesseraProtocol)
+- **Email**: support@tessera-protocol.io
+
+---
+
+## 🙏 Acknowledgments
+
+Built with ❤️ using:
+- [Node.js](https://nodejs.org) - Runtime environment
+- [Upstash](https://upstash.com) - Serverless Redis
+- [Base44](https://base44.com) - Persistent storage
+- [Cloudflare](https://cloudflare.com) - Network security
+- [TweetNaCl.js](https://github.com/dchest/tweetnacl-js) - Cryptography
+
+---
+
+<div align="center">
+
+**[⬆ back to top](#tessera-protocol)**
+
+Made with 🔷 by the Tessera team
+
+</div>
